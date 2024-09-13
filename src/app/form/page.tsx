@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginUser, LoginData } from '../services/auth';
 import styled from 'styled-components';
+import addPost, { PostData } from '../services/posts';
 
 const Container = styled.div`
   display: flex;
@@ -39,6 +39,14 @@ const Label = styled.label`
   margin-bottom: 5px;
 `;
 
+const TextArea = styled.textarea`
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  width: 100%;
+`;
+
 const Button = styled.button`
   padding: 10px;
   background-color: #3498db;
@@ -58,60 +66,65 @@ const Message = styled.p<{ success?: boolean }>`
   margin-bottom: 15px;
 `;
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function AddPostPage() {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreatePost = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const loginData: LoginData = {
-      email,
-      password,
+    const user_id = Number(localStorage.getItem('user_id'));
+    const postData: PostData = {
+      title,
+      description,
+      user_id,
     };
 
     try {
-      const response = await loginUser(loginData);
-      const { token, user } = response;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user_id', user.id.toString()); 
+      const response = await addPost(postData);
+      setSuccess('Post agregado con éxito');
+      setTitle('');
+      setDescription('');
       setError(null);
-      router.push('/');
+      router.push('/'); 
     } catch (error) {
-      setError('Error al iniciar sesión');
+      setError( 'Error al agregar el post');
       console.error('Error:', error);
+      setSuccess(null);
     }
   };
 
   return (
     <Container>
-      <h1>Iniciar Sesión</h1>
+      <h1>Agregar Nuevo Post</h1>
       {error && <Message>{error}</Message>}
-      <Form onSubmit={handleLogin}>
+      {success && <Message success>{success}</Message>}
+      <Form onSubmit={handleCreatePost}>
         <div>
-          <Label htmlFor="email">Email:</Label>
+          <Label htmlFor="title">Título:</Label>
           <Input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             required
           />
         </div>
         <div>
-          <Label htmlFor="password">Contraseña:</Label>
-          <Input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+          <Label htmlFor="description">Descripción:</Label>
+          <TextArea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             required
           />
         </div>
-        <Button type="submit">Iniciar Sesión</Button>
+        <Button type="submit">Agregar Post</Button>
       </Form>
     </Container>
   );
 }
+
